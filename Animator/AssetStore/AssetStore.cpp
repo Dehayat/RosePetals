@@ -102,6 +102,21 @@ void AssetStore::LoadAnimation(const std::string& assetId, const std::string& fi
 	Logger::Log("Loaded Animation Asset " + assetId);
 }
 
+AssetHandle AssetStore::NewAnimation(const std::string& assetId)
+{
+	auto animation = new Animation(32, 32, "", false);
+	if (assets.find(assetId) != assets.end()) {
+		delete assets[assetId].asset;
+		assets[assetId].type = AssetType::Animation;
+		assets[assetId].asset = animation;
+	}
+	else {
+		assets[assetId] = AssetHandle(AssetType::Animation, animation);
+	}
+	Logger::Log("Created new Animation Asset " + assetId);
+	return assets[assetId];
+}
+
 void AssetStore::SaveAnimation(const std::string& assetId, const std::string& filePath)
 {
 	auto animation = (Animation*)GetAsset(assetId).asset;

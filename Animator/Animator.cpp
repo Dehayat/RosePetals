@@ -130,11 +130,12 @@ void Animator::PackageLoaderEditor()
 
 void Animator::AnimationAssetEditor(ImVec2 size)
 {
-	if (ImGui::Button("Create new Animation File")) {
-		//TODO: new animation file
-	}
 	static char animationFilename[41] = "assets/AnimationData/a.anim";
 	static char saveAnimationFilename[41] = "assets/AnimationData/b.anim";
+	if (ImGui::Button("Create new Animation File")) {
+		animationHandle = GETSYSTEM(AssetStore).NewAnimation("animationFile");
+		strcpy_s(saveAnimationFilename, "assets/AnimationData/new.anim");
+	}
 	ImGui::InputText("##OpenAnimationFile", animationFilename, 41);
 	ImGui::SameLine();
 	if (ImGui::Button("Open")) {
@@ -159,11 +160,20 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 		ImGui::InputText("Sprite atlas", &animation->texture[0], 31, ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &animation->texture);
 		ImGui::InputInt2("Sprite size##spriteSizeInput", &animation->spriteFrameWidth);
 		ImGui::Checkbox("Loop", &animation->isLooping);
-		if (ImGui::Button("Generate Frames From atlas")) {
-			GenerateFramesFromAtlas();
+		static float frameDuration = 0.1f;
+		if (ImGui::CollapsingHeader("Generate Frames from Atlas")) {
+			ImGui::Indent();
+			ImGui::PushItemWidth(100);
+			ImGui::SliderFloat("Frame duration (s)", &frameDuration, 0, 5);
+			if (ImGui::Button("Generate",ImVec2(size.x-50,0))) {
+				GenerateFramesFromAtlas();
+			}
+			ImGui::Unindent();
 		}
+
 		int i = 0;
 		int addFrame = -1;
+		ImGui::SeparatorText("Frames");
 		for (auto frame : animation->frames) {
 			RenderFrame(frame, i);
 			i++;
