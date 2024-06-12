@@ -27,6 +27,12 @@ class AnimationEventData {
 public:
 	float eventTime = 0;
 	std::string eventName;
+	Guid id;
+	AnimationEventData(float eventTime = 0, std::string eventName = "NewAction") {
+		this->eventTime = eventTime;
+		this->eventName = eventName;
+		id = GETSYSTEM(Entities).GenerateGuid();
+	}
 };
 
 class Animation :public Asset {

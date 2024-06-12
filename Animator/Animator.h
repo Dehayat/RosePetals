@@ -38,7 +38,8 @@ public:
 	void AnimationViewportEditor(ImVec2 size);
 	bool IsAssetSelected();
 	void RenderSelectedAsset();
-	void RenderFrame(Frame* frame, int id);
+	int RenderFrame(Frame* frame, int id);
+	int RenderEvent(AnimationEventData* eventData, int id);
 	void RenderFrameImage(Frame* frame, int id,float fullWidth);
 	int GetFrameCount();
 	void GenerateFramesFromAtlas();

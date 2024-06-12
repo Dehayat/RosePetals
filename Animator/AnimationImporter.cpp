@@ -4,6 +4,8 @@
 
 #include "FileResource.h"
 
+#include "Debugging/Logger.h"
+
 std::string AnimationImporter::ReadToEndOfLine(const std::string& fileString, int startPos) {
 	std::string line = "";
 	int pos = startPos;
@@ -86,6 +88,18 @@ bool AnimationImporter::SaveAnimation(Animation* animation, const std::string& f
 	for (auto frameData : animation->frames) {
 		std::string frame = "Frame " + std::to_string(frameData->framePosition) + " " + std::to_string(frameData->frameDuration) + "\n";
 		SDL_RWwrite(fileHandle.file, &frame[0], sizeof(frame[0]), frame.size());
+	}
+	for (auto eventData : animation->animationEvents) {
+		if (eventData->eventName == "") {
+			Logger::Log("Ignoring empty event");
+			continue;
+		}
+		if (eventData->eventName.find("Event") != -1) {
+			Logger::Error("Event name cant the word Event");
+			continue;
+		}
+		std::string eventString = "Event " + eventData->eventName + " " + std::to_string(eventData->eventTime) + "\n";
+		SDL_RWwrite(fileHandle.file, &eventString[0], sizeof(eventString[0]), eventString.size());
 	}
 	return true;
 }

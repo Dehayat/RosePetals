@@ -38,15 +38,15 @@ void Animator::Render()
 	ImGui::End();
 
 	ImGui::Begin("Animation Player", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	ImGui::SetWindowSize(ImVec2(w / 2, h / 3));
-	ImGui::SetWindowPos(ImVec2(w / 4, h - h / 3));
-	AnimationPlayerEditor(ImVec2(w / 2, h / 3));
+	ImGui::SetWindowSize(ImVec2(w / 2, h / 3 + 50));
+	ImGui::SetWindowPos(ImVec2(w / 4, h - h / 3 - 50));
+	AnimationPlayerEditor(ImVec2(w / 2, h / 3 + 50));
 	ImGui::End();
 
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	ImGui::SetWindowSize(ImVec2(w / 2, 2 * h / 3));
+	ImGui::SetWindowSize(ImVec2(w / 2, 2 * h / 3 - 50));
 	ImGui::SetWindowPos(ImVec2(w / 4, 0));
-	AnimationViewportEditor(ImVec2(w / 2, 2 * h / 3));
+	AnimationViewportEditor(ImVec2(w / 2, 2 * h / 3 - 50));
 	ImGui::End();
 }
 
@@ -173,9 +173,12 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 
 		int i = 0;
 		int addFrame = -1;
+		int deleteFrame = -1;
 		ImGui::SeparatorText("Frames");
 		for (auto frame : animation->frames) {
-			RenderFrame(frame, i);
+			if (RenderFrame(frame, i) == -1) {
+				deleteFrame = i;
+			}
 			i++;
 			auto cursor = ImGui::GetCursorPos();
 			if (ImGui::Button(("+##" + std::to_string(frame->id)).c_str(), ImVec2(size.x, 20))) {
@@ -186,10 +189,16 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 			auto animation = (Animation*)animationHandle.asset;
 			animation->frames.insert(animation->frames.begin() + addFrame, new Frame());
 		}
+		if (deleteFrame != -1) {
+			auto animation = (Animation*)animationHandle.asset;
+			animation->frames.erase(animation->frames.begin() + deleteFrame);
+		}
+
 	}
 }
-void Animator::RenderFrame(Frame* frame, int index)
+int Animator::RenderFrame(Frame* frame, int index)
 {
+	bool del = false;
 	if (ImGui::BeginChild(("Frame##" + std::to_string(frame->id)).c_str(), ImVec2(0, 60), true, ImGuiWindowFlags_NoCollapse)) {
 		ImGui::Text("Frame");
 		ImGui::PushItemWidth(50);
@@ -205,12 +214,15 @@ void Animator::RenderFrame(Frame* frame, int index)
 		ImGui::SetCursorPos(ImVec2(pos.x + size.x - 20, pos.y - 18));
 		if (ImGui::Button(("-##" + std::to_string(frame->id)).c_str(), ImVec2(20, 45)))
 		{
-			auto animation = (Animation*)animationHandle.asset;
-			animation->frames.erase(animation->frames.begin() + index);
+			del = true;
 		}
 		ImGui::PopStyleColor();
 	}
 	ImGui::EndChild();
+	if (del) {
+		return -1;
+	}
+	return 0;
 }
 
 
@@ -303,10 +315,11 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 	{
 		animationDuration = player.GetAnimationDuration();
 		ImGui::PushItemWidth(size.x);
-		if (ImGui::SliderFloat("##Timeline", &currentAnimationTime, 0, animationDuration, "%0.2fs")) {
+		if (ImGui::SliderFloat("##Timeline", &currentAnimationTime, 0, animationDuration, "%0.3fs")) {
 			player.SetTime(currentAnimationTime);
 		}
 	}
+
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
@@ -328,7 +341,59 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 		}
 		ImGui::PopStyleVar(6);
 	}
+
+	auto animation = (Animation*)animationHandle.asset;
+	if (animation != nullptr) {
+		int deleteEvent = -1;
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+		if (ImGui::Button("Add Event")) {
+			animation->AddEvent(new AnimationEventData());
+		}
+		if (ImGui::BeginChild("Events"))
+		{
+			int i = 0;
+			for (auto eventData : animation->animationEvents) {
+				if (RenderEvent(eventData, i) == -1) {
+					deleteEvent = i;
+				}
+				i++;
+			}
+		}
+		ImGui::EndChild();
+		if (deleteEvent != -1) {
+			animation->animationEvents.erase(animation->animationEvents.begin() + deleteEvent);
+		}
+	}
 }
+
+int Animator::RenderEvent(AnimationEventData* eventData, int index) {
+
+	if (ImGui::BeginChild(("Event##" + std::to_string(eventData->id)).c_str(), ImVec2(0, 60), true, ImGuiWindowFlags_NoCollapse)) {
+		auto width = ImGui::GetContentRegionAvail().x;
+		bool del = false;
+		if (eventData->eventName.capacity() < 31) {
+			eventData->eventName.reserve(31);
+		}
+		ImGui::Text("Event");
+		ImGui::SameLine();
+		ImGui::PushItemWidth(200);
+		ImGui::InputText(("##" + std::to_string(eventData->id)).c_str(), &eventData->eventName[0], 31, ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &eventData->eventName);
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(width - 100);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5, 0.2, 0.2, 1));
+		if (ImGui::Button(("-##" + std::to_string(eventData->id)).c_str(), ImVec2(100, 0))) {
+			del = true;
+		}
+		ImGui::PopStyleColor();
+		ImGui::PushItemWidth(width);
+		ImGui::SliderFloat(("##EventSlider" + std::to_string(eventData->id)).c_str(), &eventData->eventTime, 0, animationDuration, "%0.3fs");
+		if (del) {
+			return -1;
+		}
+	}
+	ImGui::EndChild();
+}
+
 void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)
 {
 	fullWidth -= 20;
@@ -337,6 +402,7 @@ void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)
 	auto texture = (TextureAsset*)GETSYSTEM(AssetStore).GetAsset(animation->texture).asset;
 	int texW, texH;
 	if (texture == nullptr) {
+		ImGui::Button("Sprite Not Found", ImVec2(fullWidth * (frame->frameDuration / animationDuration), 100));
 		return;
 	}
 	SDL_QueryTexture(texture->texture, nullptr, nullptr, &texW, &texH);
@@ -346,6 +412,9 @@ void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)
 		auto windowWidth = ImGui::GetWindowSize().x;
 		auto windowHeight = ImGui::GetWindowSize().y;
 		ImGui::Image(texture->texture, ImVec2(fullWidth * (frame->frameDuration / animationDuration), 100), uv0, uv1, ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+	}
+	else {
+		ImGui::Button("Sprite Not Found", ImVec2(fullWidth * (frame->frameDuration / animationDuration), 100));
 	}
 }
 
@@ -378,9 +447,18 @@ void Animator::AnimationViewportEditor(ImVec2 size)
 				auto windowWidth = ImGui::GetWindowSize().x;
 				auto windowHeight = ImGui::GetWindowSize().y;
 
-				ImGui::SetCursorPosX((windowWidth - 400) * 0.5f);
-				ImGui::SetCursorPosY((windowHeight - 400) * 0.5f);
-				ImGui::Image(texture->texture, ImVec2(400, 400), uv0, uv1, ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+				auto maxImgSize = 370;
+
+				auto imgHeight = maxImgSize;
+				auto imgWidth = imgHeight * animation->spriteFrameWidth / texH;
+				if (imgWidth > maxImgSize) {
+					imgWidth = maxImgSize;
+					imgHeight = imgWidth * texH / animation->spriteFrameWidth;
+				}
+
+				ImGui::SetCursorPosX((windowWidth - imgWidth) * 0.5f);
+				ImGui::SetCursorPosY((windowHeight - imgHeight) * 0.5f);
+				ImGui::Image(texture->texture, ImVec2(imgWidth, imgHeight), uv0, uv1, ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 			}
 			else {
 				ImGui::Text("sprite atlas texture not loaded");
