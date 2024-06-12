@@ -41,4 +41,5 @@ public:
 	void RenderFrame(Frame* frame, int id);
 	void RenderFrameImage(Frame* frame, int id,float fullWidth);
 	int GetFrameCount();
+	void GenerateFramesFromAtlas();
 };

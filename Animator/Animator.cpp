@@ -160,6 +160,7 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 		ImGui::InputInt2("Sprite size##spriteSizeInput", &animation->spriteFrameWidth);
 		ImGui::Checkbox("Loop", &animation->isLooping);
 		if (ImGui::Button("Generate Frames From atlas")) {
+			GenerateFramesFromAtlas();
 		}
 		int i = 0;
 		int addFrame = -1;
@@ -377,6 +378,24 @@ void Animator::AnimationViewportEditor(ImVec2 size)
 
 bool Animator::IsAssetSelected() {
 	return selectedAsset != nullptr;
+}
+
+void Animator::GenerateFramesFromAtlas()
+{
+	auto animation = (Animation*)animationHandle.asset;
+	auto texture = (TextureAsset*)GETSYSTEM(AssetStore).GetAsset(animation->texture).asset;
+	if (animation != nullptr && texture != nullptr) {
+		int texW, texH;
+		SDL_QueryTexture(texture->texture, nullptr, nullptr, &texW, &texH);
+		animation->frames.clear();
+		int posX = 0;
+		int i = 0;
+		while (posX + animation->spriteFrameWidth <= texW) {
+			animation->AddFrame(new Frame(i, 0.1f));
+			posX += animation->spriteFrameWidth;
+			i++;
+		}
+	}
 }
 
 void Animator::RenderSelectedAsset() {
