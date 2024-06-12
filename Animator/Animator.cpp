@@ -120,7 +120,7 @@ void Animator::PackageLoaderEditor()
 
 void Animator::AnimationAssetEditor(ImVec2 size)
 {
-	if (ImGui::Button("New")) {
+	if (ImGui::Button("Create new Animation File")) {
 		//TODO: new animation file
 	}
 	static char animationFilename[41] = "assets/AnimationData/a.anim";
@@ -149,26 +149,48 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 		ImGui::InputText("Sprite atlas", &animation->texture[0], 31, ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &animation->texture);
 		ImGui::InputInt2("Sprite size##spriteSizeInput", &animation->spriteFrameWidth);
 		ImGui::Checkbox("Loop", &animation->isLooping);
-		if (ImGui::Button("Generate Frames")) {
+		if (ImGui::Button("Generate Frames From atlas")) {
 		}
 		int i = 0;
+		int addFrame = -1;
 		for (auto frame : animation->frames) {
 			RenderFrame(frame, i);
 			i++;
+			auto cursor = ImGui::GetCursorPos();
+			if (ImGui::Button(("+##" + std::to_string(frame->id)).c_str(), ImVec2(size.x, 20))) {
+				addFrame = i;
+			}
 		}
-		if (ImGui::Button("Add Frame")) {
+		if (addFrame != -1) {
+			auto animation = (Animation*)animationHandle.asset;
+			animation->frames.insert(animation->frames.begin() + addFrame, new Frame());
 		}
 	}
 }
-void Animator::RenderFrame(Frame* frame, int id)
+void Animator::RenderFrame(Frame* frame, int index)
 {
-	if (ImGui::BeginChild(("Frame##" + std::to_string(id)).c_str(), ImVec2(0, 100), true, ImGuiWindowFlags_NoCollapse)) {
+	if (ImGui::BeginChild(("Frame##" + std::to_string(frame->id)).c_str(), ImVec2(0, 60), true, ImGuiWindowFlags_NoCollapse)) {
+		//ImGui::PushItemWidth(50);
 		ImGui::Text("Frame");
-		ImGui::DragInt(("Sprite offset##" + std::to_string(id)).c_str(), &frame->framePosition, 1, 0, GetFrameCount() - 1);
-		ImGui::DragFloat(("Duration(s)##" + std::to_string(id)).c_str(), &frame->frameDuration, 0.05, 0, 200);
-		if (ImGui::Button(("Delete##" + std::to_string(id)).c_str())) {
-
+		//ImGui::PushItemWidth(50);
+		ImGui::PushItemWidth(50);
+		//ImGui::SameLine();
+		ImGui::DragInt(("offset##" + std::to_string(frame->id)).c_str(), &frame->framePosition, 1, 0, GetFrameCount() - 1);
+		ImGui::PushItemWidth(50);
+		ImGui::SameLine();
+		ImGui::DragFloat(("(s)##" + std::to_string(frame->id)).c_str(), &frame->frameDuration, 0.05, 0, 200);
+		ImGui::PushItemWidth(100);
+		ImGui::SameLine();
+		auto size = ImGui::GetContentRegionAvail();
+		auto pos = ImGui::GetCursorPos();
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5, 0.2, 0.2, 1));
+		ImGui::SetCursorPos(ImVec2(pos.x + size.x - 20, pos.y - 18));
+		if (ImGui::Button(("-##" + std::to_string(frame->id)).c_str(), ImVec2(20, 45)))
+		{
+			auto animation = (Animation*)animationHandle.asset;
+			animation->frames.erase(animation->frames.begin() + index);
 		}
+		ImGui::PopStyleColor();
 	}
 	ImGui::EndChild();
 }

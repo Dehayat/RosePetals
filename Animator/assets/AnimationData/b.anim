@@ -1,7 +1,6 @@
 Texture sekiroIdle
 Size 64 64
-Loop
-Frame 0 0.100000
+Frame 0 0.300000
 Frame 1 0.100000
 Frame 2 0.100000
-Frame 3 0.100000
+Frame 0 0.100000

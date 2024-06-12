@@ -9,6 +9,9 @@ Animation::Animation(int spriteWidth, int spriteHeight, std::string spriteTextur
 }
 
 SDL_Rect Animation::GetSourceRect(int frame) {
+	if (frame >= frames.size()) {
+		return SDL_Rect{ 0, 0, 1, 1 };
+	}
 	SDL_Rect rect{
 		frames[frame]->framePosition * spriteFrameWidth,
 		0,

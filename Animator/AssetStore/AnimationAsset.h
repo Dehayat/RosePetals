@@ -3,7 +3,9 @@
 #include <vector>
 #include <queue>
 
+#include "../Entity.h"
 #include "AssetHandle.h"
+#include "../Systems.h"
 
 #include <SDL2/SDL.h>
 
@@ -12,6 +14,12 @@ class Frame {
 public:
 	int framePosition = 0;
 	float frameDuration = 0;
+	Guid id;
+	Frame(int framePosition = 0, float frameDuration = 0) {
+		this->framePosition = framePosition;
+		this->frameDuration = frameDuration;
+		id = GETSYSTEM(Entities).GenerateGuid();
+	}
 };
 
 class AnimationEventData {
