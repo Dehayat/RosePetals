@@ -9,6 +9,7 @@ Animator::Animator() {
 	animationDuration = 1;
 	currentAnimationTime = 0;
 	isPlaying = false;
+	selectedFrame = -1;
 }
 
 AssetPackage* Animator::GetPackage(const std::string& filePath) {
@@ -183,6 +184,7 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 			auto cursor = ImGui::GetCursorPos();
 			if (ImGui::Button(("+##" + std::to_string(frame->id)).c_str(), ImVec2(size.x, 20))) {
 				addFrame = i;
+				selectedFrame = -1;
 			}
 		}
 		if (addFrame != -1) {
@@ -199,6 +201,13 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 int Animator::RenderFrame(Frame* frame, int index)
 {
 	bool del = false;
+	if (selectedFrame == index) {
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.7, 0.7, 0.3, 1));
+	}
+	else {
+		auto color = ImGui::GetStyleColorVec4(ImGuiCol_Border);
+		ImGui::PushStyleColor(ImGuiCol_Border, color);
+	}
 	if (ImGui::BeginChild(("Frame##" + std::to_string(frame->id)).c_str(), ImVec2(0, 60), true, ImGuiWindowFlags_NoCollapse)) {
 		ImGui::Text("Frame");
 		ImGui::PushItemWidth(50);
@@ -214,11 +223,13 @@ int Animator::RenderFrame(Frame* frame, int index)
 		ImGui::SetCursorPos(ImVec2(pos.x + size.x - 20, pos.y - 18));
 		if (ImGui::Button(("-##" + std::to_string(frame->id)).c_str(), ImVec2(20, 45)))
 		{
+			selectedFrame = -1;
 			del = true;
 		}
 		ImGui::PopStyleColor();
 	}
 	ImGui::EndChild();
+	ImGui::PopStyleColor();
 	if (del) {
 		return -1;
 	}
@@ -408,13 +419,20 @@ void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)
 	SDL_QueryTexture(texture->texture, nullptr, nullptr, &texW, &texH);
 	auto uv0 = ImVec2((float)sourceRect.x / texW, (float)sourceRect.y / texH);
 	auto uv1 = ImVec2(((float)sourceRect.x + sourceRect.w) / texW, ((float)sourceRect.y + sourceRect.h) / texH);
+	auto borderColor = ImVec4(0.5, 0.5, 0.5, 1);
+	if (selectedFrame == id) {
+		borderColor = ImVec4(0.7, 0.7, 0.3, 1);
+	}
 	if (texture != nullptr && texture->texture != nullptr) {
 		auto windowWidth = ImGui::GetWindowSize().x;
 		auto windowHeight = ImGui::GetWindowSize().y;
-		ImGui::Image(texture->texture, ImVec2(fullWidth * (frame->frameDuration / animationDuration), 100), uv0, uv1, ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+		ImGui::Image(texture->texture, ImVec2(fullWidth * (frame->frameDuration / animationDuration), 100), uv0, uv1, ImVec4(1, 1, 1, 1), borderColor);
 	}
 	else {
 		ImGui::Button("Sprite Not Found", ImVec2(fullWidth * (frame->frameDuration / animationDuration), 100));
+	}
+	if (ImGui::IsItemClicked()) {
+		selectedFrame = id;
 	}
 }
 

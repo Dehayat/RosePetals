@@ -1,10 +1,8 @@
-Texture sekiroRun
-Size 64 64
+Texture OrbIdle
+Size 32 32
+Loop
 Frame 0 0.100000
 Frame 1 0.100000
 Frame 2 0.100000
-Frame 3 0.100000
-Frame 4 0.100000
-Frame 5 0.100000
-Event NewAction 0.127000
-Event NewAction2 0.484000
+Frame 3 0.350000
+Event Squashed 0.318000

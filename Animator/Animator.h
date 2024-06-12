@@ -25,6 +25,7 @@ class Animator {
 	float animationDuration;
 	float currentAnimationTime;
 	bool isPlaying;
+	int selectedFrame;
 
 public:
 	Animator();
@@ -40,7 +41,7 @@ public:
 	void RenderSelectedAsset();
 	int RenderFrame(Frame* frame, int id);
 	int RenderEvent(AnimationEventData* eventData, int id);
-	void RenderFrameImage(Frame* frame, int id,float fullWidth);
+	void RenderFrameImage(Frame* frame, int id, float fullWidth);
 	int GetFrameCount();
 	void GenerateFramesFromAtlas();
 };
