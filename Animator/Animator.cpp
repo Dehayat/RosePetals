@@ -187,6 +187,7 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 				selectedFrame = -1;
 			}
 		}
+		scrollToSelected = false;
 		if (addFrame != -1) {
 			auto animation = (Animation*)animationHandle.asset;
 			animation->frames.insert(animation->frames.begin() + addFrame, new Frame());
@@ -202,6 +203,9 @@ int Animator::RenderFrame(Frame* frame, int index)
 {
 	bool del = false;
 	if (selectedFrame == index) {
+		if (scrollToSelected) {
+			ImGui::SetScrollHereY();
+		}
 		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.7, 0.7, 0.3, 1));
 	}
 	else {
@@ -229,6 +233,9 @@ int Animator::RenderFrame(Frame* frame, int index)
 		ImGui::PopStyleColor();
 	}
 	ImGui::EndChild();
+	if (ImGui::IsItemClicked()) {
+		selectedFrame = index;
+	}
 	ImGui::PopStyleColor();
 	if (del) {
 		return -1;
@@ -433,6 +440,7 @@ void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)
 	}
 	if (ImGui::IsItemClicked()) {
 		selectedFrame = id;
+		scrollToSelected = true;
 	}
 }
 

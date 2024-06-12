@@ -26,9 +26,11 @@ class Animator {
 	float currentAnimationTime;
 	bool isPlaying;
 	int selectedFrame;
+	bool scrollToSelected;
 
 public:
 	Animator();
+	~Animator() {}
 
 	AssetPackage* GetPackage(const std::string& filePath);
 
