@@ -41,7 +41,7 @@ struct AnimationComponent {
 		AssetStore& assetStore = GETSYSTEM(AssetStore);
 		auto animationHandle = assetStore.GetAsset(animation);
 		auto animationAsset = static_cast<Animation*>(animationHandle.asset);
-		if (animationAsset == nullptr) {
+		if (animationAsset == nullptr || animationAsset->frames.size() == 0) {
 			return;
 		}
 		float pastFramesTime = 0;
@@ -54,9 +54,9 @@ struct AnimationComponent {
 			pastFramesTime += frame->frameDuration;
 		}
 		if (currentFrame >= animationAsset->frames.size()) {
-			currentAnimationTime = 0;
-			currentFrameTime = 0;
-			currentFrame = 0;
+			currentFrame = animationAsset->frames.size() - 1;
+			currentFrameTime = animationAsset->frames[currentFrame]->frameDuration;
+			currentAnimationTime = t;
 		}
 		else {
 			currentFrameTime = t - pastFramesTime;
