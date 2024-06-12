@@ -2,6 +2,15 @@
 
 #include "AssetStore/AssetStore.h"
 
+Animator::Animator() {
+	selectedAsset = nullptr;
+	animationHandle = AssetHandle();
+	player = AnimationComponent("animationFile");
+	animationDuration = 1;
+	currentAnimationTime = 0;
+	isPlaying = false;
+}
+
 AssetPackage* Animator::GetPackage(const std::string& filePath) {
 	for (auto pkg : assetPackages) {
 		if (pkg->filePath == filePath) {
@@ -129,6 +138,7 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 		}
 		ImGui::InputText("Sprite atlas", &animation->texture[0], 31, ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &animation->texture);
 		ImGui::InputInt2("Sprite size##spriteSizeInput", &animation->spriteFrameWidth);
+		ImGui::Checkbox("Loop", &animation->isLooping);
 		if (ImGui::Button("Generate Frames")) {
 		}
 		int i = 0;
@@ -157,17 +167,77 @@ void Animator::RenderFrame(Frame* frame, int id)
 void Animator::AnimationPlayerEditor(ImVec2 size)
 {
 	{
-		ImGui::Button("First frame");
+		if (ImGui::Button("First frame")) {
+			currentAnimationTime = 0;
+			player.SetTime(0);
+			isPlaying = false;
+		}
 		ImGui::SameLine();
-		ImGui::Button("Prev frame");
+		if (ImGui::Button("Prev frame")) {
+			isPlaying = false;
+			auto animation = (Animation*)animationHandle.asset;
+			if (animation != nullptr && (player.currentFrame > 0 ||
+				(currentAnimationTime >= animationDuration && animation->frames.size() > 1)
+				))
+			{
+				int f = player.currentFrame - 1;
+				if (currentAnimationTime >= animationDuration) {
+					f = animation->frames.size() - 2;
+				}
+				float t = 0;
+				for (int i = 0; i < f; i++) {
+					t += animation->frames[i]->frameDuration;
+				}
+				currentAnimationTime = t;
+				player.SetTime(currentAnimationTime);
+			}
+		}
 		ImGui::SameLine();
-		ImGui::Button("Stop");
+		if (ImGui::Button("Stop")) {
+			currentAnimationTime = 0;
+			player.SetTime(0);
+			isPlaying = false;
+		}
 		ImGui::SameLine();
-		ImGui::Button("Play");
+		if (!isPlaying) {
+			if (ImGui::Button("Play")) {
+				if (currentAnimationTime >= animationDuration) {
+					currentAnimationTime = 0;
+					player.Reset();
+				}
+				isPlaying = true;
+			}
+		}
+		else {
+			if (ImGui::Button("Pause")) {
+				isPlaying = false;
+			}
+		}
 		ImGui::SameLine();
-		ImGui::Button("Next frame");
+		if (ImGui::Button("Next frame")) {
+			isPlaying = false;
+			auto animation = (Animation*)animationHandle.asset;
+			if (animation != nullptr && (player.currentFrame < animation->frames.size() - 1 && currentAnimationTime < animationDuration))
+			{
+				int f = player.currentFrame + 1;
+				float t = 0;
+				for (int i = 0; i < f; i++) {
+					t += animation->frames[i]->frameDuration;
+				}
+				currentAnimationTime = t;
+				player.SetTime(currentAnimationTime);
+			}
+		}
 		ImGui::SameLine();
-		ImGui::Button("Last frame");
+		if (ImGui::Button("Last frame")) {
+			isPlaying = false;
+			auto animation = (Animation*)animationHandle.asset;
+			if (animation != nullptr) {
+				float t = animationDuration - animation->frames[animation->frames.size() - 1]->frameDuration;
+				currentAnimationTime = t;
+				player.SetTime(currentAnimationTime);
+			}
+		}
 	}
 	{
 		animationDuration = player.GetAnimationDuration();
@@ -205,6 +275,9 @@ void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)
 	auto sourceRect = SDL_Rect(animation->GetSourceRect(id));
 	auto texture = (TextureAsset*)GETSYSTEM(AssetStore).GetAsset(animation->texture).asset;
 	int texW, texH;
+	if (texture == nullptr) {
+		return;
+	}
 	SDL_QueryTexture(texture->texture, nullptr, nullptr, &texW, &texH);
 	auto uv0 = ImVec2((float)sourceRect.x / texW, (float)sourceRect.y / texH);
 	auto uv1 = ImVec2(((float)sourceRect.x + sourceRect.w) / texW, ((float)sourceRect.y + sourceRect.h) / texH);
@@ -222,11 +295,20 @@ void Animator::AnimationViewportEditor(ImVec2 size)
 		auto sourceRect = SDL_Rect(animation->GetSourceRect(player.currentFrame));
 		auto texture = (TextureAsset*)GETSYSTEM(AssetStore).GetAsset(animation->texture).asset;
 		if (texture != nullptr) {
-			currentAnimationTime += 0.01666;
-			if (currentAnimationTime > animationDuration) {
-				currentAnimationTime = 0;
+			if (isPlaying) {
+				currentAnimationTime += 0.01666;
+				player.Update(0.0166);
+				if (player.isOver) {
+					player.isOver = false;
+					isPlaying = false;
+					currentAnimationTime = animationDuration;
+				}
+				else {
+					if (player.justFinished) {
+						currentAnimationTime = 0;
+					}
+				}
 			}
-			player.Update(0.0166);
 			int texW, texH;
 			SDL_QueryTexture(texture->texture, nullptr, nullptr, &texW, &texH);
 			auto uv0 = ImVec2((float)sourceRect.x / texW, (float)sourceRect.y / texH);

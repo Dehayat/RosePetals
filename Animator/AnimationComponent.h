@@ -37,7 +37,7 @@ struct AnimationComponent {
 	}
 
 	void SetTime(float t) {
-		currentAnimationTime += t;
+		currentAnimationTime = t;
 		AssetStore& assetStore = GETSYSTEM(AssetStore);
 		auto animationHandle = assetStore.GetAsset(animation);
 		auto animationAsset = static_cast<Animation*>(animationHandle.asset);
@@ -93,7 +93,6 @@ struct AnimationComponent {
 			if (currentFrame < animationAsset->frames.size() - 1) {
 				currentFrameTime = 0;
 				currentFrame++;
-				currentFrame %= animationAsset->frames.size();
 			}
 			else {
 				if (!isOver) {

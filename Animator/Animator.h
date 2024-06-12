@@ -24,17 +24,10 @@ class Animator {
 	AnimationComponent player;
 	float animationDuration;
 	float currentAnimationTime;
+	bool isPlaying;
 
 public:
-	Animator() {
-		selectedAsset = nullptr;
-		animationHandle = AssetHandle();
-		player = AnimationComponent("animationFile");
-		animationDuration = 1;
-		currentAnimationTime = 0;
-	}
-	~Animator() {
-	}
+	Animator();
 
 	AssetPackage* GetPackage(const std::string& filePath);
 
