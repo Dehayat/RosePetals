@@ -115,6 +115,16 @@ void Animator::PackageLoaderEditor()
 			ImGui::Image(asset->texture, ImVec2(260, 260), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0.5, 0.5, 0.5, 0.8));
 		}
 		ImGui::EndChild();
+		auto animation = (Animation*)animationHandle.asset;
+		if (animation != nullptr) {
+			auto windowWidth = ImGui::GetWindowSize().x;
+			auto windowHeight = ImGui::GetWindowSize().y;
+			auto buttonSize = ImGui::CalcTextSize("Use as Sprite Atlas");
+			ImGui::SetCursorPosX((windowWidth - buttonSize.x) * 0.5f);
+			if (ImGui::Button("Use as Sprite Atlas")) {
+				animation->texture = selectedAsset->metaData->name;
+			}
+		}
 	}
 }
 
@@ -170,11 +180,8 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 void Animator::RenderFrame(Frame* frame, int index)
 {
 	if (ImGui::BeginChild(("Frame##" + std::to_string(frame->id)).c_str(), ImVec2(0, 60), true, ImGuiWindowFlags_NoCollapse)) {
-		//ImGui::PushItemWidth(50);
 		ImGui::Text("Frame");
-		//ImGui::PushItemWidth(50);
 		ImGui::PushItemWidth(50);
-		//ImGui::SameLine();
 		ImGui::DragInt(("offset##" + std::to_string(frame->id)).c_str(), &frame->framePosition, 1, 0, GetFrameCount() - 1);
 		ImGui::PushItemWidth(50);
 		ImGui::SameLine();
