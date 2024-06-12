@@ -167,13 +167,24 @@ void Animator::RenderFrame(Frame* frame, int id)
 void Animator::AnimationPlayerEditor(ImVec2 size)
 {
 	{
-		if (ImGui::Button("First frame")) {
+		ImGuiStyle& style = ImGui::GetStyle();
+		float width = 0.0f;
+		width += ImGui::CalcTextSize("<<").x;
+		width += ImGui::CalcTextSize("<").x;
+		width += ImGui::CalcTextSize("O").x;
+		width += ImGui::CalcTextSize("|>").x;
+		width += ImGui::CalcTextSize(">").x;
+		width += ImGui::CalcTextSize(">>").x;
+		width += style.ItemSpacing.x * 10;
+		float off = (size.x - width) * 0.5;
+		ImGui::SetCursorPosX(off);
+		if (ImGui::Button("<<")) {
 			currentAnimationTime = 0;
 			player.SetTime(0);
 			isPlaying = false;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Prev frame")) {
+		if (ImGui::Button("<")) {
 			isPlaying = false;
 			auto animation = (Animation*)animationHandle.asset;
 			if (animation != nullptr && (player.currentFrame > 0 ||
@@ -193,14 +204,14 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Stop")) {
+		if (ImGui::Button("O")) {
 			currentAnimationTime = 0;
 			player.SetTime(0);
 			isPlaying = false;
 		}
 		ImGui::SameLine();
 		if (!isPlaying) {
-			if (ImGui::Button("Play")) {
+			if (ImGui::Button("|>")) {
 				if (currentAnimationTime >= animationDuration) {
 					currentAnimationTime = 0;
 					player.Reset();
@@ -209,12 +220,12 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 			}
 		}
 		else {
-			if (ImGui::Button("Pause")) {
+			if (ImGui::Button("||")) {
 				isPlaying = false;
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Next frame")) {
+		if (ImGui::Button(">")) {
 			isPlaying = false;
 			auto animation = (Animation*)animationHandle.asset;
 			if (animation != nullptr && (player.currentFrame < animation->frames.size() - 1 && currentAnimationTime < animationDuration))
@@ -229,7 +240,7 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Last frame")) {
+		if (ImGui::Button(">>")) {
 			isPlaying = false;
 			auto animation = (Animation*)animationHandle.asset;
 			if (animation != nullptr) {
@@ -242,7 +253,7 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 	{
 		animationDuration = player.GetAnimationDuration();
 		ImGui::PushItemWidth(size.x);
-		if (ImGui::SliderFloat("##Timeline", &currentAnimationTime, 0, animationDuration)) {
+		if (ImGui::SliderFloat("##Timeline", &currentAnimationTime, 0, animationDuration, "%0.2fs")) {
 			player.SetTime(currentAnimationTime);
 		}
 	}
