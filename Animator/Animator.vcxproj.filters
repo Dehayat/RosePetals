@@ -27,9 +27,6 @@
     <ClCompile Include="AnimationAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Animator.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="Debugging\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -87,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AnimationComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Animator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

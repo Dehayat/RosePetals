@@ -10,6 +10,9 @@ Animator::Animator() {
 	currentAnimationTime = 0;
 	isPlaying = false;
 	selectedFrame = -1;
+	scrollToSelected = false;
+	selectedEvent = -1;
+	scrollToEvent = false;
 }
 
 AssetPackage* Animator::GetPackage(const std::string& filePath) {
@@ -332,9 +335,18 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 	}
 	{
 		animationDuration = player.GetAnimationDuration();
+		auto padding = ImGui::GetStyle().WindowPadding;
 		ImGui::PushItemWidth(size.x);
 		if (ImGui::SliderFloat("##Timeline", &currentAnimationTime, 0, animationDuration, "%0.3fs")) {
 			player.SetTime(currentAnimationTime);
+		}
+		if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0)) {
+			auto animation = (Animation*)animationHandle.asset;
+			if (animation != nullptr) {
+				animation->AddEvent(new AnimationEventData(currentAnimationTime));
+				selectedEvent = animation->animationEvents.size() - 1;
+				scrollToEvent = true;
+			}
 		}
 	}
 
@@ -366,50 +378,81 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 		if (ImGui::Button("Add Event")) {
 			animation->AddEvent(new AnimationEventData());
+			selectedEvent = animation->animationEvents.size() - 1;
+			scrollToEvent = true;
 		}
 		if (ImGui::BeginChild("Events"))
 		{
-			int i = 0;
-			for (auto eventData : animation->animationEvents) {
-				if (RenderEvent(eventData, i) == -1) {
-					deleteEvent = i;
+			if (ImGui::BeginTable("EventsTable", 2)) {
+				ImGui::TableNextRow();
+				int i = 0;
+				for (auto eventData : animation->animationEvents) {
+					ImGui::TableNextColumn();
+					if (RenderEvent(eventData, i) == -1) {
+						deleteEvent = i;
+					}
+					i++;
 				}
-				i++;
+				ImGui::EndTable();
 			}
 		}
 		ImGui::EndChild();
+
+
 		if (deleteEvent != -1) {
+			selectedEvent = -1;
 			animation->animationEvents.erase(animation->animationEvents.begin() + deleteEvent);
 		}
 	}
+	scrollToEvent = false;
 }
 
-int Animator::RenderEvent(AnimationEventData* eventData, int index) {
+int Animator::RenderEvent(AnimationEventData* eventData, int index)
+{
+	bool del = false;
+	if (selectedEvent == index) {
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.7, 0.7, 0.3, 1));
+	}
+	else {
+		auto color = ImGui::GetStyleColorVec4(ImGuiCol_Border);
+		ImGui::PushStyleColor(ImGuiCol_Border, color);
+	}
 
 	if (ImGui::BeginChild(("Event##" + std::to_string(eventData->id)).c_str(), ImVec2(0, 60), true, ImGuiWindowFlags_NoCollapse)) {
 		auto width = ImGui::GetContentRegionAvail().x;
-		bool del = false;
 		if (eventData->eventName.capacity() < 31) {
 			eventData->eventName.reserve(31);
 		}
 		ImGui::Text("Event");
 		ImGui::SameLine();
-		ImGui::PushItemWidth(200);
+		ImGui::PushItemWidth(100);
 		ImGui::InputText(("##" + std::to_string(eventData->id)).c_str(), &eventData->eventName[0], 31, ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &eventData->eventName);
 		ImGui::SameLine();
-		ImGui::SetCursorPosX(width - 100);
+		if (ImGui::Button(("Align##" + std::to_string(eventData->id)).c_str(), ImVec2(50, 0))) {
+			eventData->eventTime = currentAnimationTime;
+		}
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(width - 22);
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5, 0.2, 0.2, 1));
-		if (ImGui::Button(("-##" + std::to_string(eventData->id)).c_str(), ImVec2(100, 0))) {
+		if (ImGui::Button(("-##" + std::to_string(eventData->id)).c_str(), ImVec2(30, 0))) {
 			del = true;
 		}
 		ImGui::PopStyleColor();
 		ImGui::PushItemWidth(width);
 		ImGui::SliderFloat(("##EventSlider" + std::to_string(eventData->id)).c_str(), &eventData->eventTime, 0, animationDuration, "%0.3fs");
-		if (del) {
-			return -1;
+
+	}
+	ImGui::PopStyleColor();
+	ImGui::EndChild();
+	if (selectedEvent == index) {
+		if (scrollToEvent) {
+			ImGui::SetScrollHereY();
 		}
 	}
-	ImGui::EndChild();
+	if (del) {
+		return -1;
+	}
+	return 0;
 }
 
 void Animator::RenderFrameImage(Frame* frame, int id, float fullWidth)

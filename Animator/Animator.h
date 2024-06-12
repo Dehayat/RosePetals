@@ -27,6 +27,8 @@ class Animator {
 	bool isPlaying;
 	int selectedFrame;
 	bool scrollToSelected;
+	int selectedEvent;
+	bool scrollToEvent;
 
 public:
 	Animator();
