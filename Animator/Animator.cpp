@@ -120,17 +120,27 @@ void Animator::PackageLoaderEditor()
 
 void Animator::AnimationAssetEditor(ImVec2 size)
 {
-	if (ImGui::Button("New Animation File")) {
+	if (ImGui::Button("New")) {
 		//TODO: new animation file
 	}
 	static char animationFilename[41] = "assets/AnimationData/a.anim";
+	static char saveAnimationFilename[41] = "assets/AnimationData/b.anim";
 	ImGui::InputText("##OpenAnimationFile", animationFilename, 41);
-	if (ImGui::Button("Open Animation File")) {
+	ImGui::SameLine();
+	if (ImGui::Button("Open")) {
 		GETSYSTEM(AssetStore).LoadAnimation("animationFile", animationFilename);
+		strcpy_s(saveAnimationFilename, animationFilename);
 		animationHandle = GETSYSTEM(AssetStore).GetAsset("animationFile");
 	}
 	if (animationHandle.asset != nullptr)
 	{
+		ImGui::SeparatorText("Animation File");
+		ImGui::InputText("##SaveAnimationFile", saveAnimationFilename, 41);
+		ImGui::SameLine();
+		if (ImGui::Button("Save")) {
+			GETSYSTEM(AssetStore).SaveAnimation("animationFile", saveAnimationFilename);
+			animationHandle = GETSYSTEM(AssetStore).GetAsset("animationFile");
+		}
 		auto animation = (Animation*)animationHandle.asset;
 		static char fileName[31] = "Sprite Atlas";
 		if (animation->texture.capacity() < 31) {

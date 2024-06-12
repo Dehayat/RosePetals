@@ -101,3 +101,11 @@ void AssetStore::LoadAnimation(const std::string& assetId, const std::string& fi
 	}
 	Logger::Log("Loaded Animation Asset " + assetId);
 }
+
+void AssetStore::SaveAnimation(const std::string& assetId, const std::string& filePath)
+{
+	auto animation = (Animation*)GetAsset(assetId).asset;
+	if (animation != nullptr) {
+		bool saved = AnimationImporter::SaveAnimation(animation, filePath);
+	}
+}

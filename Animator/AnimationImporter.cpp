@@ -68,3 +68,24 @@ Animation* AnimationImporter::LoadAnimation(const std::string& fileName) {
 	}
 	return animation;
 }
+
+bool AnimationImporter::SaveAnimation(Animation* animation, const std::string& fileName)
+{
+	FileResource fileHandle = FileResource(fileName, "w+");
+	if (fileHandle.file == nullptr) {
+		return false;
+	}
+	std::string texture = "Texture " + animation->texture + "\n";
+	SDL_RWwrite(fileHandle.file, &texture[0], sizeof(texture[0]), texture.size());
+	std::string size = "Size " + std::to_string(animation->spriteFrameWidth) + " " + std::to_string(animation->spriteFrameHeight) + "\n";
+	SDL_RWwrite(fileHandle.file, &size[0], sizeof(size[0]), size.size());
+	if (animation->isLooping) {
+		std::string loop = "Loop\n";
+		SDL_RWwrite(fileHandle.file, &loop[0], sizeof(loop[0]), loop.size());
+	}
+	for (auto frameData : animation->frames) {
+		std::string frame = "Frame " + std::to_string(frameData->framePosition) + " " + std::to_string(frameData->frameDuration) + "\n";
+		SDL_RWwrite(fileHandle.file, &frame[0], sizeof(frame[0]), frame.size());
+	}
+	return true;
+}

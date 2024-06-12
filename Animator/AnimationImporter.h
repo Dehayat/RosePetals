@@ -10,4 +10,5 @@ private:
 	static std::string ReadToSpace(const std::string& fileString, int startPos);
 public:
 	static Animation* LoadAnimation(const std::string& fileName);
+	static bool SaveAnimation(Animation* animation, const std::string& fileName);
 };
