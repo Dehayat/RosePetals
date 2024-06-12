@@ -165,7 +165,7 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 			ImGui::Indent();
 			ImGui::PushItemWidth(100);
 			ImGui::SliderFloat("Frame duration (s)", &frameDuration, 0, 5);
-			if (ImGui::Button("Generate",ImVec2(size.x-50,0))) {
+			if (ImGui::Button("Generate", ImVec2(size.x - 50, 0))) {
 				GenerateFramesFromAtlas();
 			}
 			ImGui::Unindent();
@@ -382,7 +382,16 @@ void Animator::AnimationViewportEditor(ImVec2 size)
 				ImGui::SetCursorPosY((windowHeight - 400) * 0.5f);
 				ImGui::Image(texture->texture, ImVec2(400, 400), uv0, uv1, ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 			}
+			else {
+				ImGui::Text("sprite atlas texture not loaded");
+			}
 		}
+		else {
+			ImGui::Text("sprite atlas texture not loaded");
+		}
+	}
+	else {
+		ImGui::Text("No Animation Loaded");
 	}
 }
 

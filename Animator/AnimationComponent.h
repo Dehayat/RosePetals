@@ -73,6 +73,9 @@ struct AnimationComponent {
 		if (animationAsset == nullptr) {
 			return;
 		}
+		if (animationAsset->frames.size() == 0) {
+			return;
+		}
 		if (currentFrame >= animationAsset->frames.size()) {
 			Reset();
 		}
