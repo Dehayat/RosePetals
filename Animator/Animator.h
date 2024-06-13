@@ -29,6 +29,8 @@ class Animator {
 	bool scrollToSelected;
 	int selectedEvent;
 	bool scrollToEvent;
+	Uint64 lastTime;
+	const float maxDt;
 
 public:
 	Animator();
@@ -47,5 +49,5 @@ public:
 	int RenderEvent(AnimationEventData* eventData, int id);
 	void RenderFrameImage(Frame* frame, int id, float fullWidth);
 	int GetFrameCount();
-	void GenerateFramesFromAtlas();
+	void GenerateFramesFromAtlas(float frameDuration);
 };

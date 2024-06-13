@@ -38,7 +38,7 @@ public:
 		if (ImGui::Button("New Asset Package")) {
 			assetPackages.push_back(new AssetPackage());
 		}
-		static char fileName[31] = "Packages/assets.pkg";
+		static char fileName[31] = "assets/Packages/assets.pkg";
 		if (ImGui::Button("Open Asset Package")) {
 			if (PackageIsLoaded(fileName)) {
 				Logger::Log("Asset package already Open");

@@ -2,7 +2,7 @@
 
 #include "AssetStore/AssetStore.h"
 
-Animator::Animator() {
+Animator::Animator() :maxDt(0.0166) {
 	selectedAsset = nullptr;
 	animationHandle = AssetHandle();
 	player = AnimationComponent("animationFile");
@@ -13,6 +13,7 @@ Animator::Animator() {
 	scrollToSelected = false;
 	selectedEvent = -1;
 	scrollToEvent = false;
+	lastTime = 0;
 }
 
 AssetPackage* Animator::GetPackage(const std::string& filePath) {
@@ -170,7 +171,7 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 			ImGui::PushItemWidth(100);
 			ImGui::SliderFloat("Frame duration (s)", &frameDuration, 0, 5);
 			if (ImGui::Button("Generate", ImVec2(size.x - 50, 0))) {
-				GenerateFramesFromAtlas();
+				GenerateFramesFromAtlas(frameDuration);
 			}
 			ImGui::Unindent();
 		}
@@ -300,6 +301,7 @@ void Animator::AnimationPlayerEditor(ImVec2 size)
 					player.Reset();
 				}
 				isPlaying = true;
+				lastTime = SDL_GetTicks64();
 			}
 		}
 		else {
@@ -495,8 +497,15 @@ void Animator::AnimationViewportEditor(ImVec2 size)
 		auto texture = (TextureAsset*)GETSYSTEM(AssetStore).GetAsset(animation->texture).asset;
 		if (texture != nullptr) {
 			if (isPlaying) {
-				currentAnimationTime += 0.01666;
-				player.Update(0.0166);
+
+				auto dt = (SDL_GetTicks64() - lastTime) / 1000.0f;
+				if (dt > maxDt) {
+					dt = maxDt;
+				}
+				lastTime = SDL_GetTicks64();
+
+				currentAnimationTime += dt;
+				player.Update(dt);
 				if (player.isOver) {
 					player.isOver = false;
 					isPlaying = false;
@@ -546,7 +555,7 @@ bool Animator::IsAssetSelected() {
 	return selectedAsset != nullptr;
 }
 
-void Animator::GenerateFramesFromAtlas()
+void Animator::GenerateFramesFromAtlas(float frameDuration)
 {
 	auto animation = (Animation*)animationHandle.asset;
 	auto texture = (TextureAsset*)GETSYSTEM(AssetStore).GetAsset(animation->texture).asset;
@@ -557,7 +566,7 @@ void Animator::GenerateFramesFromAtlas()
 		int posX = 0;
 		int i = 0;
 		while (posX + animation->spriteFrameWidth <= texW) {
-			animation->AddFrame(new Frame(i, 0.1f));
+			animation->AddFrame(new Frame(i, frameDuration));
 			posX += animation->spriteFrameWidth;
 			i++;
 		}
