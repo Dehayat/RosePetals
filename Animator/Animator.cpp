@@ -1,5 +1,9 @@
 #include "Animator.h"
 
+#include <filesystem>
+
+#include <nfd.h>
+
 #include "AssetStore/AssetStore.h"
 
 Animator::Animator() :maxDt(0.0166) {
@@ -14,6 +18,7 @@ Animator::Animator() :maxDt(0.0166) {
 	selectedEvent = -1;
 	scrollToEvent = false;
 	lastTime = 0;
+	selectedAnimation = nullptr;
 }
 
 AssetPackage* Animator::GetPackage(const std::string& filePath) {
@@ -57,24 +62,30 @@ void Animator::Render()
 
 void Animator::PackageLoaderEditor()
 {
-	static char fileName[31] = "assets/Packages/a.pkg";
-	ImGui::InputText("##OpenAssetPackageFileName", fileName, 31);
 	if (ImGui::Button("Load Asset Package")) {
-		auto pkg = GetPackage(fileName);
-		if (pkg != nullptr) {
-			Logger::Log("Reloading Asset Package");
-			assetPackages.erase(std::find(assetPackages.begin(), assetPackages.end(), pkg));
-			delete pkg;
-		}
-		pkg = new AssetPackage();
-		if (pkg->Load(fileName)) {
-			assetPackages.push_back(pkg);
-			GETSYSTEM(AssetStore).LoadPackage(fileName);
-			Logger::Log("Asset package Opened");
-		}
-		else {
-			delete pkg;
-			Logger::Log("Failed to open asset package " + std::string(fileName));
+		nfdchar_t* fileName = NULL;
+		nfdresult_t result = NFD_OpenDialog("pkg", GetWorkingPath().c_str(), &fileName);
+
+		if (result == NFD_OKAY) {
+			auto fileNameStr = std::string(fileName);
+			lastPath = fileNameStr.substr(0, fileNameStr.find_last_of("\\/"));
+			auto pkg = GetPackage(fileName);
+			if (pkg != nullptr) {
+				Logger::Log("Reloading Asset Package");
+				assetPackages.erase(std::find(assetPackages.begin(), assetPackages.end(), pkg));
+				delete pkg;
+			}
+			pkg = new AssetPackage();
+			if (pkg->Load(fileName)) {
+				assetPackages.push_back(pkg);
+				GETSYSTEM(AssetStore).LoadPackage(fileName);
+				Logger::Log("Asset package Opened");
+			}
+			else {
+				delete pkg;
+				Logger::Log("Failed to open asset package " + std::string(fileName));
+			}
+			free(fileName);
 		}
 	}
 
@@ -114,19 +125,32 @@ void Animator::PackageLoaderEditor()
 						continue;
 					}
 					bool selected = selectedAsset == assetFile;
-					if (ImGui::Selectable((assetFile->metaData->name + " :" + std::to_string(assetFile->guid)).c_str(), &selected)) {
+					if (ImGui::Selectable((assetFile->metaData->name + " :" + std::to_string(assetFile->guid)).c_str(), &selected, ImGuiSelectableFlags_AllowDoubleClick)) {
 						selectedAsset = assetFile;
+						if (ImGui::IsMouseDoubleClicked(0)) {
+							auto animation = (Animation*)animationHandle.asset;
+							if (animation != nullptr) {
+								animation->texture = selectedAsset->metaData->name;
+							}
+						}
 					}
 				}
 				ImGui::EndListBox();
-				if (ImGui::IsItemClicked()) {
-					selectedAsset = nullptr;
-				}
 			}
 			ImGui::Unindent();
 		}
 	}
 	if (selectedAsset != nullptr) {
+		auto animation = (Animation*)animationHandle.asset;
+		if (animation != nullptr) {
+			auto windowWidth = ImGui::GetWindowSize().x;
+			auto windowHeight = ImGui::GetWindowSize().y;
+			auto buttonSize = ImGui::CalcTextSize("Use as Sprite Atlas");
+			ImGui::SetCursorPosX((windowWidth - buttonSize.x) * 0.5f);
+			if (ImGui::Button("Set Texture as Sprite Atlas")) {
+				animation->texture = selectedAsset->metaData->name;
+			}
+		}
 		if (ImGui::BeginChild("Preview", ImVec2(280, 280), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
 			auto asset = (TextureAsset*)(GETSYSTEM(AssetStore).GetAsset(selectedAsset->metaData->name).asset);
 			auto windowWidth = ImGui::GetWindowSize().x;
@@ -137,53 +161,49 @@ void Animator::PackageLoaderEditor()
 			ImGui::Image(asset->texture, ImVec2(260, 260), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0.5, 0.5, 0.5, 0.8));
 		}
 		ImGui::EndChild();
-		auto animation = (Animation*)animationHandle.asset;
-		if (animation != nullptr) {
-			auto windowWidth = ImGui::GetWindowSize().x;
-			auto windowHeight = ImGui::GetWindowSize().y;
-			auto buttonSize = ImGui::CalcTextSize("Use as Sprite Atlas");
-			ImGui::SetCursorPosX((windowWidth - buttonSize.x) * 0.5f);
-			if (ImGui::Button("Use as Sprite Atlas")) {
-				animation->texture = selectedAsset->metaData->name;
-			}
-		}
 	}
 }
 
 void Animator::AnimationAssetEditor(ImVec2 size)
 {
-	static char animationFilename[41] = "assets/AnimationData/a.anim";
-	static char saveAnimationFilename[41] = "assets/AnimationData/b.anim";
 	if (ImGui::Button("Create new Animation File")) {
-		animationHandle = GETSYSTEM(AssetStore).NewAnimation("animationFile");
-		strcpy_s(saveAnimationFilename, "assets/AnimationData/new.anim");
+		auto saveFileName = SaveFile("anim");
+		if (saveFileName != "") {
+			animationFile = saveFileName;
+			animationHandle = GETSYSTEM(AssetStore).NewAnimation("animationFile");
+		}
 	}
-	ImGui::InputText("##OpenAnimationFile", animationFilename, 41);
-	ImGui::SameLine();
-	if (ImGui::Button("Open") || loadSelectedAnimaiton) {
+
+	if (ImGui::Button("Open")) {
+		auto openFileName = OpenFile("anim");
+		if (openFileName != "") {
+			animationFile = openFileName;
+			GETSYSTEM(AssetStore).LoadAnimation("animationFile", animationFile);
+			animationHandle = GETSYSTEM(AssetStore).GetAsset("animationFile");
+		}
+	}
+	if (loadSelectedAnimaiton) {
 		if (loadSelectedAnimaiton) {
 			loadSelectedAnimaiton = false;
-			strcpy_s(animationFilename, selectedAnimation->filePath.c_str());
 		}
-		GETSYSTEM(AssetStore).LoadAnimation("animationFile", animationFilename);
-		strcpy_s(saveAnimationFilename, animationFilename);
+		animationFile = selectedAnimation->filePath;
+		GETSYSTEM(AssetStore).LoadAnimation("animationFile", animationFile);
 		animationHandle = GETSYSTEM(AssetStore).GetAsset("animationFile");
 	}
 	if (animationHandle.asset != nullptr)
 	{
 		ImGui::SeparatorText("Animation File");
-		ImGui::InputText("##SaveAnimationFile", saveAnimationFilename, 41);
-		ImGui::SameLine();
+		ImGui::Text(animationFile.c_str());
 		if (ImGui::Button("Save")) {
-			GETSYSTEM(AssetStore).SaveAnimation("animationFile", saveAnimationFilename);
-			animationHandle = GETSYSTEM(AssetStore).GetAsset("animationFile");
+			GETSYSTEM(AssetStore).SaveAnimation("animationFile", animationFile);
 		}
 		auto animation = (Animation*)animationHandle.asset;
-		static char fileName[31] = "Sprite Atlas";
-		if (animation->texture.capacity() < 31) {
-			animation->texture.reserve(31);
+		if (animation->texture == "") {
+			ImGui::LabelText("Sprite atlas", "-Select from package-");
 		}
-		ImGui::InputText("Sprite atlas", &animation->texture[0], 31, ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &animation->texture);
+		else {
+			ImGui::LabelText("Sprite atlas", animation->texture.c_str());
+		}
 		ImGui::InputInt2("Sprite size##spriteSizeInput", &animation->spriteFrameWidth);
 		ImGui::Checkbox("Loop", &animation->isLooping);
 		static float frameDuration = 0.1f;
@@ -607,4 +627,43 @@ int Animator::GetFrameCount() {
 		return texW / animation->spriteFrameWidth;
 	}
 	return 50;
+}
+
+std::string Animator::GetWorkingPath()
+{
+	if (lastPath == "") {
+		lastPath = std::filesystem::current_path().string();
+	}
+	return lastPath;
+}
+
+std::string Animator::SaveFile(const std::string& extension)
+{
+	nfdchar_t* fileName = NULL;
+	nfdresult_t result = NFD_SaveDialog(extension.c_str(), GetWorkingPath().c_str(), &fileName);
+	if (result == NFD_OKAY) {
+		std::string fileNameStr = fileName;
+		if (fileNameStr.find("." + extension) == -1) {
+			fileNameStr += "." + extension;
+		}
+		lastPath = fileNameStr.substr(0, fileNameStr.find_last_of("\\/"));
+		return fileNameStr;
+	}
+	else {
+		return "";
+	}
+}
+
+std::string Animator::OpenFile(const std::string& extension)
+{
+	nfdchar_t* fileName = NULL;
+	nfdresult_t result = NFD_OpenDialog(extension.c_str(), GetWorkingPath().c_str(), &fileName);
+	if (result == NFD_OKAY) {
+		std::string fileNameStr = fileName;
+		lastPath = fileNameStr.substr(0, fileNameStr.find_last_of("\\/"));
+		return fileNameStr;
+	}
+	else {
+		return "";
+	}
 }

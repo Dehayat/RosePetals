@@ -33,6 +33,8 @@ class Animator {
 	Uint64 lastTime;
 	const float maxDt;
 	bool loadSelectedAnimaiton = false;
+	std::string lastPath = "";
+	std::string animationFile;
 
 public:
 	Animator();
@@ -52,4 +54,7 @@ public:
 	void RenderFrameImage(Frame* frame, int id, float fullWidth);
 	int GetFrameCount();
 	void GenerateFramesFromAtlas(float frameDuration);
+	std::string GetWorkingPath();
+	std::string SaveFile(const std::string& extension);
+	std::string OpenFile(const std::string& extension);
 };
