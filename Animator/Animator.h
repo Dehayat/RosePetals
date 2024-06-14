@@ -20,6 +20,7 @@ class Animator {
 
 	std::vector<AssetPackage*> assetPackages;
 	AssetFile* selectedAsset;
+	AssetFile* selectedAnimation;
 	AssetHandle animationHandle;
 	AnimationComponent player;
 	float animationDuration;
@@ -31,6 +32,7 @@ class Animator {
 	bool scrollToEvent;
 	Uint64 lastTime;
 	const float maxDt;
+	bool loadSelectedAnimaiton = false;
 
 public:
 	Animator();

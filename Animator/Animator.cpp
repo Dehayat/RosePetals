@@ -91,6 +91,23 @@ void Animator::PackageLoaderEditor()
 				delete package;
 				continue;
 			}
+			ImGui::SeparatorText("Animations");
+			if (ImGui::BeginListBox(Label("Animations", package->guid).c_str())) {
+				for (auto assetFile : package->assets) {
+					if (assetFile->assetType != AssetType::Animation) {
+						continue;
+					}
+					bool selected = selectedAnimation == assetFile;
+					if (ImGui::Selectable((assetFile->metaData->name + " :" + std::to_string(assetFile->guid)).c_str(), &selected, ImGuiSelectableFlags_AllowDoubleClick)) {
+						selectedAnimation = assetFile;
+						if (ImGui::IsMouseDoubleClicked(0)) {
+							loadSelectedAnimaiton = true;
+						}
+					}
+				}
+				ImGui::EndListBox();
+			}
+			ImGui::SeparatorText("Textures");
 			if (ImGui::BeginListBox(Label("Textures", package->guid).c_str())) {
 				for (auto assetFile : package->assets) {
 					if (assetFile->assetType != AssetType::Texture) {
@@ -143,7 +160,11 @@ void Animator::AnimationAssetEditor(ImVec2 size)
 	}
 	ImGui::InputText("##OpenAnimationFile", animationFilename, 41);
 	ImGui::SameLine();
-	if (ImGui::Button("Open")) {
+	if (ImGui::Button("Open") || loadSelectedAnimaiton) {
+		if (loadSelectedAnimaiton) {
+			loadSelectedAnimaiton = false;
+			strcpy_s(animationFilename, selectedAnimation->filePath.c_str());
+		}
 		GETSYSTEM(AssetStore).LoadAnimation("animationFile", animationFilename);
 		strcpy_s(saveAnimationFilename, animationFilename);
 		animationHandle = GETSYSTEM(AssetStore).GetAsset("animationFile");
