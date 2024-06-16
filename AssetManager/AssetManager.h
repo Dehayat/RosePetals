@@ -95,6 +95,10 @@ public:
 					package->AddAsset(AssetType::Animation);
 					Logger::Log("New Animation Created");
 				}
+				if (ImGui::Button(Label("Add Script Asset", package->guid).c_str())) {
+					package->AddAsset(AssetType::Script);
+					Logger::Log("New Script Created");
+				}
 				if (ImGui::BeginListBox(Label("Assets", package->guid).c_str())) {
 					for (auto assetFile : package->assets) {
 						bool selected = selectedAsset == assetFile;
